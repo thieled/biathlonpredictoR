@@ -60,8 +60,16 @@ utils::globalVariables(c("Behind",
                          "slope_rank",
                          "slope_time",
                          "starts_with",
-                         "time_last_race"))
-
+                         "time_last_race",
+                         "CupId",
+                         "IsTeam",
+                         "is_team",
+                         "pred",
+                         "pred_rank",
+                         "EndDate",
+                         "ScheduleStatus",
+                         "StartTime"
+                         ))
 
 
 
@@ -109,4 +117,47 @@ get_previous_seasons <- function(date, minus_years = 1) {
     sprintf("%02d", y + 1 - minus_years)
   )
   return(season)
+}
+
+
+
+#' @title Get the next scheduled event
+#' @description The function returns the next scheduled event, filtered by WorldCup level and schedule status.
+#' @return Returns a dataframe with information about the next scheduled World Cup event.
+#' @export
+#' @import biathlonResults
+#' @examples
+#' get_next_event()
+get_next_event <- function(){
+
+  current_season <-get_season(lubridate::today())
+
+  events <- biathlonResults::get_events(current_season) %>%
+    dplyr::filter(Level == 1L) %>%
+    dplyr::mutate(end_in = as.numeric(lubridate::as_date(EndDate) - lubridate::today())
+    )
+
+  next_event <- biathlonResults::get_competition(events[which.max(1/events$end_in),]$EventId) %>%
+    dplyr::mutate(diff_to_today = as.numeric(lubridate::as_date(StartTime) - lubridate::today())) %>%
+    dplyr::filter(ScheduleStatus == "SCHEDULED")
+
+  return(next_event)
+
+}
+
+
+#' @title Get the next scheduled race
+#' @description The function returns the next scheduled race, filtered by level and schedule status.
+#' @return Returns a dataframe with information about the next scheduled World Cup race.
+#' @export
+#' @examples
+#' get_next_event()
+get_next_race <- function(){
+
+  next_event <- get_next_event()
+
+  next_race <- get_next_event()[which.max(1/next_event$diff_to_today),]
+
+  return(next_race)
+
 }

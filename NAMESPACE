@@ -2,8 +2,12 @@
 
 export("%<>%")
 export("%>%")
+export(get_next_event)
+export(get_next_race)
 export(get_previous_seasons)
+export(get_race_prediction)
 export(get_season)
 export(update_features)
+import(biathlonResults)
 importFrom(magrittr,"%<>%")
 importFrom(magrittr,"%>%")

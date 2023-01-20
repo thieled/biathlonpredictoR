@@ -12,6 +12,7 @@
 #' @examples
 #' update_features(c("BTNOR11605199301"), n_long = 2, n_slope = 2)
 #' @export
+#' @import biathlonResults
 update_features <- function(athlete_list,
                             cutoff_datetime = NULL,
                             n_long = 26,
@@ -28,7 +29,9 @@ update_features <- function(athlete_list,
     data.table::rbindlist(fill = T)
 
   # Check cutoff date
-  if (is.null(cutoff_datetime)) cutoff_datetime <- lubridate::now()
+  if (is.null(cutoff_datetime)) {
+    message("No cutoff date specified. Use today.")
+    cutoff_datetime <- lubridate::now()}
   cutoff_datetime <- lubridate::as_datetime(cutoff_datetime)
 
   # Determine seasons to take into account: Current and last 2 seasons
@@ -42,7 +45,8 @@ update_features <- function(athlete_list,
     dplyr::mutate(Season = stringr::str_remove(Season, "/")) %>%
     dplyr::filter(Season %in% sss,
                   Level %in% c("WC", "WCH", "OWG"),
-                  Comp %in% c("SP", "IN", "MS", "PU"))
+                  Comp %in% c("SP", "IN", "MS", "PU")
+                  )
 
   # Get races
   race_list <- ath_results %>%
@@ -75,15 +79,18 @@ update_features <- function(athlete_list,
                       shooting_errors = ShootingTotal,
                       total_time = TotalTime,
                       behind = Behind,
-                      pu_starting_lag = PursuitStartDistance
+                      pu_starting_lag = PursuitStartDistance,
+                      is_team = IsTeam
   )
+
 
   # Clean, prepare variables
   race_df %<>%
     dplyr::filter(
-      is_result == T,
+      is_result == TRUE,
       result_order < 1000,
-      !disc %in% c("SI", "RL", "SR"),
+      is_team == FALSE,
+     !disc %in% c("SI", "RL", "SR"),
       !is.na(behind),
       !is.na(shooting_errors)
     ) %>%
@@ -115,7 +122,7 @@ update_features <- function(athlete_list,
   # Get age of athletes
   message("Merge birthdays of athletes in those races...")
 
-  data("birthdays")
+  #data("birthdays")
 
   race_df %<>%
     dplyr::left_join(birthdays) %>%
@@ -155,9 +162,9 @@ update_features <- function(athlete_list,
 
   ## Switch between historical data and new data
 
-  if(lubridate::as_date(cutoff_datetime) <= lubridate::today()){
+  if(lubridate::as_date(cutoff_datetime) <= lubridate::now()){
 
-    message("Race date is in the past or today. Using lagged data for computing features...")
+    message("Race date is in the past. Using lagged data for computing features...")
 
     # Calculate features
     race_df %<>%
