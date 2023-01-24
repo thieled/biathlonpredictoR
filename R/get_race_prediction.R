@@ -27,6 +27,11 @@ get_race_prediction <- function(race_id,
   category_str <- stringr::str_sub(race_id, -4L, -3L)
   discipline_str <- stringr::str_sub(race_id, -2L)
 
+  # Stop if team event
+  if(discipline_str == "RL" || category_str == "MX"){
+    stop("RaceId is team event. Currently not supported.")
+  }
+
   # Get location and date
   location_str <- race_info$Event.OrganizerId[1]
   racedate <- race_info$Comp.StartTime[1] %>% lubridate::as_datetime() # save as racedate for legacy reasons
@@ -40,11 +45,11 @@ get_race_prediction <- function(race_id,
     message("No start list available, use World Cup standings of that season...")
 
     ath_list <- biathlonResults::get_cups(season_str) %>%
-      dplyr::filter(stringr::str_detect(CupId, paste0("WRLCP__", category_str, "TS"))) %>%
-      dplyr::pull(CupId) %>%
-      lapply(biathlonResults::get_cup_results) %>%
-      dplyr::bind_rows() %>%
-      dplyr::pull(IBUId)
+     dplyr::filter(stringr::str_detect(CupId, paste0("WRLCP__", category_str, "TS"))) %>%
+     dplyr::pull(CupId) %>%
+     lapply(biathlonResults::get_cup_results) %>%
+     dplyr::bind_rows() %>%
+     dplyr::pull(IBUId)
   }
 
   # Get latest features
