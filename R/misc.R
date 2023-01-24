@@ -68,7 +68,8 @@ utils::globalVariables(c("Behind",
                          "pred_rank",
                          "EndDate",
                          "ScheduleStatus",
-                         "StartTime"
+                         "StartTime",
+                         "DisciplineId"
                          ))
 
 
@@ -156,8 +157,30 @@ get_next_race <- function(){
 
   next_event <- get_next_event()
 
-  next_race <- get_next_event()[which.max(1/next_event$diff_to_today),]
+  next_race <- next_event[which.max(1/next_event$diff_to_today),]
 
   return(next_race)
+
+}
+
+
+#' @title Get the after n next scheduled race
+#' @description The function returns the next scheduled race plus n, filtered by level and schedule status.
+#' For the moment, team events are omitted here.
+#' @return Returns a dataframe with information about the next scheduled World Cup race. Note: only for the
+#' event.
+#' @param n Jump to n after next race. Default is 0.
+#' @export
+#' @examples
+#' get_next_race_plus_n()
+get_next_race_plus_n <- function(n=0){
+
+  next_event <- get_next_event() %>% dplyr::filter(!DisciplineId %in% c("RL", "SR"))
+
+  if(n >= nrow(next_event)) {stop(paste("Not more than", n, "races scheduled for next event.", sep = " "))}
+
+  next_race_plus_n <- next_event[which.max(1/next_event$diff_to_today)+n,]
+
+  return(next_race_plus_n)
 
 }
